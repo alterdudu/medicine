@@ -1,0 +1,233 @@
+@layout("/common/_container.html") {
+<style>
+    .user-list {
+        padding: 10px;
+        background-color: #f2f2f2;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        overflow-y: auto;
+        max-height: 300px;
+    }
+
+    .chat-messages {
+        padding: 10px;
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        min-height: 200px;
+        margin-bottom: 10px;
+        overflow-y: auto;
+        max-height: 400px;
+    }
+
+    .message-item {
+        margin-bottom: 10px;
+    }
+
+    .user-item {
+        cursor: pointer;
+        padding: 8px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .user-item:hover {
+        background-color: #e0e0e0;
+    }
+
+    #chatInput {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .send-button {
+        width: 100%;
+    }
+</style>
+
+<div class="col-lg-2 col-sm-3">
+    <div class="panel panel-default">
+        <div class="panel-heading">正在聊天用户列表</div>
+        <div class="user-list panel-body" id="userList">
+            <!-- 在这里添加用户列表的内容 -->
+        </div>
+    </div>
+</div>
+
+
+<div class="col-lg-10 col-sm-9">
+    <div class="row">
+        <div class="col-lg-12 col-sm-12">
+            <div class="chat-messages">
+                <!-- 在这里显示聊天消息 -->
+            </div>
+        </div>
+    </div>
+
+    <div class="hidden-xs" id="chatToolbar" role="group">
+        <!-- 在这里添加与聊天相关的按钮 -->
+    </div>
+    <div class="row">
+        <div class="col-lg-12 col-sm-12">
+            <!-- 聊天输入框 -->
+            <textarea class="form-control" id="chatInput" rows="3" placeholder="在这里输入消息..."></textarea>
+            <br>
+            <!-- 发送消息按钮 -->
+            <button class="btn btn-primary send-button" onclick="sendMessage()">发送消息</button>
+        </div>
+    </div>
+    <#table id="chatTable"/>
+</div>
+<script>
+    laydate.render({
+        elem: '#beginTime'
+    });
+    laydate.render({
+        elem: '#endTime'
+    });
+
+    // 存储当前聊天用户信息的变量
+    var selectedUserInfo = null;
+
+    // 存储用户信息的数组
+    var usersData = [];
+
+    // 使用Ajax请求获取正在聊天用户列表
+    function loadChatUsers() {
+        $.ajax({
+            type: "GET",
+            url: Feng.ctxPath + "/exchange/ex/users/msg",
+            data: { username: '${shiro.getUser().name}' },
+            success: function (data) {
+                // 将doctorName和patientName放入同一个集合
+                var array = new Array();
+                data.forEach(function(user) {
+                    array.push(user.doctorName);
+                    array.push(user.patientName);
+                });
+                console.log("数据集合为" + array)
+
+                // 将集合转换为数组并过滤不等于'${shiro.getUser().name}'的值
+                usersData = Array.from(array).filter(function(name) {
+                    return name !== '${shiro.getUser().name}';
+                });
+                console.log("过滤之后数据" + usersData)
+                // 将用户列表添加到页面上
+                var userListElement = $("#userList");
+                userListElement.empty(); // 清空用户列表
+
+                // 遍历用户数据并添加到列表中
+                for (var i = 0; i < usersData.length; i++) {
+                    var user = usersData[i];
+                    console.log("用户信息为", user);
+
+                    var userInfo = '<div class="user-item" data-index="' + i + '" data-name="' + user + '">';
+                    userInfo += '用户 : ' + user + '<br>';
+                    userInfo += '</div>';
+                    userListElement.append(userInfo);
+                }
+
+                // 为用户列表项添加点击事件
+                $(".user-item").click(function() {
+                    var index = $(this).data("index");
+                    var selectedUser = usersData[index];
+                    // 切换到选中用户的聊天窗口
+                    switchToChatWithUser(selectedUser);
+                });
+
+                Feng.success("用户列表加载成功!");
+            },
+            error: function (data) {
+                Feng.error("用户列表加载失败!" + data.responseJSON.message + "!");
+            }
+        });
+    }
+
+    // 切换到聊天窗口的函数
+    // 切换到聊天窗口的函数
+    function switchToChatWithUser(userName) {
+
+        selectedUserInfo = userName;
+        // 清空现有聊天消息
+        $(".chat-messages").empty();
+
+        // 使用Ajax请求获取选中用户的聊天消息
+        $.ajax({
+            type: "GET",
+            url: Feng.ctxPath + "/exchange/ex/msg",
+            data: {
+                username: '${shiro.getUser().name}',
+                name: userName
+            },
+            success: function (data) {
+                // 遍历聊天消息并添加到聊天窗口
+                for (var i = 0; i < data.length; i++) {
+                    var message = data[i];
+                    var messageItem = '<div class="message-item">';
+                    messageItem +=   message;
+                    messageItem += '</div>';
+                    $(".chat-messages").append(messageItem);
+                }
+
+                // 滚动到底部，显示最新消息
+                var chatMessages = $(".chat-messages");
+                chatMessages.scrollTop(chatMessages[0].scrollHeight);
+            },
+            error: function (data) {
+                Feng.error("获取聊天记录失败!" + data.responseJSON.message + "!");
+            }
+        });
+    }
+
+    // ...
+
+    // 为用户列表项添加点击事件
+    $(".user-item").click(function () {
+        var index = $(this).data("index");
+        var selectedUser = usersData[index];
+        switchToChatWithUser(selectedUser);
+    });
+
+
+    // 发送消息的函数
+    // 发送消息的函数
+    function sendMessage() {
+        var message = $("#chatInput").val();
+        if (message.trim() !== "") {
+            // 使用Ajax请求将消息发送到后端
+            $.ajax({
+                type: "GET",
+                url: Feng.ctxPath + "/exchange/ex/msg/dangqian",
+                data: {
+                    name: selectedUserInfo, // 这里可以填写你的用户名，或者从后端获取当前登录用户的用户名
+                    username: '${shiro.getUser().name}',
+                    msg: message
+                },
+                success: function (data) {
+                    // 在聊天窗口中显示发送的消息
+                    var sentMessage = '<div class="message-item">';
+                    sentMessage += '你说: ' + message;
+                    sentMessage += '</div>';
+                    $(".chat-messages").append(sentMessage);
+
+                    // 清空输入框
+                    $("#chatInput").val("");
+
+                    // 滚动到底部，显示最新消息
+                    var chatMessages = $(".chat-messages");
+                    chatMessages.scrollTop(chatMessages[0].scrollHeight);
+                },
+                error: function (data) {
+                    Feng.error("发送消息失败!" + data.responseJSON.message + "!");
+                }
+            });
+        }
+    }
+
+
+    // 页面加载完成时调用加载用户列表的函数
+    $(document).ready(function () {
+        loadChatUsers();
+    });
+</script>
+@}
+

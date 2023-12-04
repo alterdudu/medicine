@@ -1,0 +1,101 @@
+package cn.stylefeng.guns.modular.system.model;
+
+import java.util.Date;
+import com.baomidou.mybatisplus.annotations.TableField;
+import com.baomidou.mybatisplus.activerecord.Model;
+import com.baomidou.mybatisplus.annotations.TableName;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.io.Serializable;
+
+/**
+ * <p>
+ *
+ * </p>
+ *
+ * @author stylefeng
+ * @since 2023-11-27
+ */
+@TableName("user_room")
+public class Room extends Model<Room> {
+
+    private static final long serialVersionUID = 1L;
+
+    private Integer id;
+    @TableField("patient_idcard")
+    private Integer patientIdcard;
+    @TableField("room_name")
+    private String roomName;
+    private String comment;
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @TableField("point_date")
+    private Date pointDate;
+    @TableField("point_place")
+    private String pointPlace;
+
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Integer getPatientIdcard() {
+        return patientIdcard;
+    }
+
+    public void setPatientIdcard(Integer patientIdcard) {
+        this.patientIdcard = patientIdcard;
+    }
+
+    public String getRoomName() {
+        return roomName;
+    }
+
+    public void setRoomName(String roomName) {
+        this.roomName = roomName;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public Date getPointDate() {
+        return pointDate;
+    }
+
+    public void setPointDate(Date pointDate) {
+        this.pointDate = pointDate;
+    }
+
+    public String getPointPlace() {
+        return pointPlace;
+    }
+
+    public void setPointPlace(String pointPlace) {
+        this.pointPlace = pointPlace;
+    }
+
+    @Override
+    protected Serializable pkVal() {
+        return this.id;
+    }
+
+    @Override
+    public String toString() {
+        return "Room{" +
+        ", id=" + id +
+        ", patientIdcard=" + patientIdcard +
+        ", roomName=" + roomName +
+        ", comment=" + comment +
+        ", pointDate=" + pointDate +
+        ", pointPlace=" + pointPlace +
+        "}";
+    }
+}
